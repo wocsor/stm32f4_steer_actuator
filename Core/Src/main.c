@@ -10,6 +10,11 @@ static void MX_CAN1_Init(void);
 static void MX_TIM2_Init(void);
 void delay(int a);
 void motor_set(int16_t amt, uint8_t enable);
+
+CAN_TxHeaderTypeDef   TxHeader;
+uint8_t               TxData[8];
+uint32_t              TxMailbox;
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -31,8 +36,27 @@ int main(void)
 
   int16_t CH1_DC = 0;
 
+  TxHeader.IDE = CAN_ID_STD;
+  TxHeader.StdId = 0x446;
+  TxHeader.RTR = CAN_RTR_DATA;
+  TxHeader.DLC = 2;
+
+  TxData[0] = 50;  
+  TxData[1] = 0xAA;
+
+  if (HAL_CAN_Start(&hcan1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
   while (1)
   {
+
+    if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
+      {
+        Error_Handler ();
+      }
+
 	  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
 	  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
 	  delay(500000);
@@ -106,17 +130,18 @@ static void MX_CAN1_Init(void)
 {
 
   hcan1.Instance = CAN1;
-  hcan1.Init.Prescaler = 12;
+  hcan1.Init.Prescaler = 8;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
   hcan1.Init.SyncJumpWidth = CAN_SJW_2TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_2TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_3TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_3TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_5TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
   hcan1.Init.AutoRetransmission = ENABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
+
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
     Error_Handler();
