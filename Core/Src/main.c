@@ -1,119 +1,46 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2022 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
-
-/* USER CODE END PTD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
 
 TIM_HandleTypeDef htim2;
 
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_TIM2_Init(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
+void delay(int a);
+void motor_set(int16_t amt, uint8_t enable);
 /**
   * @brief  The application entry point.
   * @retval int
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
 
-  /* USER CODE END 1 */
-
-  /* MCU Configuration--------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
 
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
-
-  /* Configure the system clock */
   SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
-
-  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_CAN1_Init();
   MX_TIM2_Init();
 
+  // PWM channels init
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
-  int32_t CH1_DC = 0;
+  int16_t CH1_DC = 0;
 
-  /* USER CODE BEGIN 2 */
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
 	  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
 	  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
 	  delay(500000);
 
-    while(CH1_DC < 65535)
+    while(CH1_DC < 32700)
     {
-        TIM2->CCR1 = CH1_DC;
-        TIM2->CCR2 = CH1_DC;
-        CH1_DC += 70;
+        motor_set(CH1_DC, 1);
+        CH1_DC += 64;
         HAL_Delay(1);
     }
 
@@ -121,16 +48,13 @@ int main(void)
 	  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
 	  delay(500000);
 
-    while(CH1_DC > 0)
+    while(CH1_DC > -32700)
     {
-        TIM2->CCR1 = CH1_DC;
-        TIM2->CCR2 = CH1_DC;
+        motor_set(CH1_DC, 1);
         CH1_DC -= 70;
         HAL_Delay(1);
     }
-    /* USER CODE BEGIN 3 */
   }
-  /* USER CODE END 3 */
 }
 
 /**
@@ -142,14 +66,11 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
-  */
+
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
+
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
@@ -163,8 +84,6 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
@@ -186,13 +105,6 @@ void SystemClock_Config(void)
 static void MX_CAN1_Init(void)
 {
 
-  /* USER CODE BEGIN CAN1_Init 0 */
-
-  /* USER CODE END CAN1_Init 0 */
-
-  /* USER CODE BEGIN CAN1_Init 1 */
-
-  /* USER CODE END CAN1_Init 1 */
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 16;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
@@ -209,9 +121,6 @@ static void MX_CAN1_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN CAN1_Init 2 */
-
-  /* USER CODE END CAN1_Init 2 */
 
 }
 
@@ -223,17 +132,10 @@ static void MX_CAN1_Init(void)
 static void MX_TIM2_Init(void)
 {
 
-  /* USER CODE BEGIN TIM2_Init 0 */
-
-  /* USER CODE END TIM2_Init 0 */
-
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
   TIM_OC_InitTypeDef sConfigOC = {0};
 
-  /* USER CODE BEGIN TIM2_Init 1 */
-
-  /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -271,9 +173,7 @@ static void MX_TIM2_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM2_Init 2 */
 
-  /* USER CODE END TIM2_Init 2 */
   HAL_TIM_MspPostInit(&htim2);
 
 }
@@ -287,16 +187,12 @@ static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, CH1_EN_Pin|CH2_EN_Pin|RELAY_EN_Pin|LED1_Pin
                           |LED2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : CH1_EN_Pin CH2_EN_Pin RELAY_EN_Pin LED1_Pin
-                           LED2_Pin */
   GPIO_InitStruct.Pin = CH1_EN_Pin|CH2_EN_Pin|RELAY_EN_Pin|LED1_Pin
                           |LED2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -306,7 +202,6 @@ static void MX_GPIO_Init(void)
 
 }
 
-/* USER CODE BEGIN 4 */
 void delay (int a)
 {
   volatile int i,j;
@@ -316,7 +211,24 @@ void delay (int a)
   }
   return;
 }
-/* USER CODE END 4 */
+
+void motor_set (int16_t amt, uint8_t enable)
+{
+  // differential signal with neutral at 50% duty cycle
+
+  uint32_t duty = 32767;
+
+  TIM2->CCR1 = duty + amt;
+  TIM2->CCR2 = duty - amt; 
+
+  // set the GPIO lines
+  if (enable > 0){
+    enable = 1;
+  }
+  HAL_GPIO_WritePin(GPIOA, CH1_EN_Pin, enable);
+  HAL_GPIO_WritePin(GPIOA, CH2_EN_Pin, enable);
+
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
