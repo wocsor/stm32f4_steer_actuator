@@ -8,12 +8,17 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_TIM2_Init(void);
+static uint8_t crc_checksum(uint8_t, int, uint8_t);
+
+
 void delay(int a);
 void motor_set(int16_t amt, uint8_t enable);
 
 CAN_TxHeaderTypeDef   TxHeader;
 uint8_t               TxData[8];
 uint32_t              TxMailbox;
+
+const uint8_t crc_poly = 0xD5U; // CRC8 
 
 /**
   * @brief  The application entry point.
@@ -49,16 +54,28 @@ int main(void)
     Error_Handler();
   }
 
+  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+
+
   while (1)
   {
+      if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
+      	  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+      } else {
+        HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+      }
 
-    HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+
+    //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+    //HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
 
     if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
       {
-        HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
         // Error_Handler ();
+      } else {
+          HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
       }
 
     HAL_Delay(100);
@@ -126,6 +143,29 @@ void SystemClock_Config(void)
     Error_Handler();
   }
 }
+
+
+
+// crc function from Panda 
+
+uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly) {
+  uint8_t crc = 0xFF;
+  int i, j;
+  for (i = len - 1; i >= 0; i--) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80U) != 0U) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
+  }
+  return crc;
+}
+
+
 
 /**
   * @brief CAN1 Initialization Function
