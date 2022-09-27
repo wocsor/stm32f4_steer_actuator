@@ -20,32 +20,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN TD */
 
-/* USER CODE END TD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
+const uint8_t crc_poly = 0xD5U; // CRC8
 /* USER CODE BEGIN PFP */
+static uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly);
 
 /* USER CODE END PFP */
 
@@ -213,13 +192,54 @@ void CAN1_TX_IRQHandler(void)
   /* USER CODE END CAN1_TX_IRQn 1 */
 }
 
+
+
 /**
   * @brief This function handles CAN1 RX0 interrupts.
   */
 void CAN1_RX0_IRQHandler(void)
 {
   /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-
+  while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
+      uint16_t address = CAN1->sFIFOMailBox[0].RIR >> 21;
+      switch (address) {
+        case CAN_INPUT: ;
+          uint8_t dat[6];
+          for (int i=0; i<6; i++) {
+            dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
+          }
+          uint8_t index = dat[1] & COUNTER_CYCLE;
+          if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
+            if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
+              //if counter and checksum valid accept commands
+              mode = ((dat[1] >> 4U) & 3U);
+              if (mode != 0){
+                lka_req = 1;
+              } else {
+                lka_req = 0;
+              }
+              pos_input = ((dat[3] & 0xFU) << 8U) | dat[2];
+              rel_input = ((dat[5] << 8U) | dat[4]);
+              // TODO: safety? scaling?
+              torque_req = rel_input;
+              can1_count_in++;
+            }
+            else {
+              state = FAULT_COUNTER;
+            }
+            state = NO_FAULT;
+            timeout = 0;
+          }
+          else {
+            state = FAULT_BAD_CHECKSUM;
+          }
+          break;
+        default: ;
+      }
+      can_rx(0);
+      // next
+      // CAN1->RF0R |= CAN_RF0R_RFOM0;
+  } 
   /* USER CODE END CAN1_RX0_IRQn 0 */
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
