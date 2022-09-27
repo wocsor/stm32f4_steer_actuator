@@ -20,32 +20,11 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN TD */
 
-/* USER CODE END TD */
-
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
+const uint8_t crc_poly = 0xD5U; // CRC8
 /* USER CODE BEGIN PFP */
+static uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly);
 
 /* USER CODE END PFP */
 
@@ -56,6 +35,7 @@
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -214,7 +194,7 @@ void CAN1_TX_IRQHandler(void)
           dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
         }
         uint8_t index = dat[1] & COUNTER_CYCLE;
-        if(dat[0] == lut_checksum(dat, 6, crc8_lut_1d)) {
+        if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
           if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
             //if counter and checksum valid accept commands
             mode = ((dat[1] >> 4U) & 3U);
@@ -246,6 +226,30 @@ void CAN1_TX_IRQHandler(void)
     // CAN1->RF0R |= CAN_RF0R_RFOM0;
   }
 }
+
+
+
+
+// from main.c too
+
+uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly) {
+  uint8_t crc = 0xFF;
+  int i, j;
+  for (i = len - 1; i >= 0; i--) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80U) != 0U) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
+  }
+  return crc;
+}
+
+
 
 /**
   * @brief This function handles CAN1 RX0 interrupts.
