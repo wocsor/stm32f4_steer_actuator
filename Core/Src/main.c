@@ -8,17 +8,22 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
 static void MX_TIM2_Init(void);
-static uint8_t crc_checksum(uint8_t, int, uint8_t);
+static uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly);
 
 
 void delay(int a);
 void motor_set(int16_t amt, uint8_t enable);
 
+
+// CAN
+#define CAN_IN 0x2e5
+#define CAN_OUT 0x260
+
 CAN_TxHeaderTypeDef   TxHeader;
 uint8_t               TxData[8];
 uint32_t              TxMailbox;
 
-const uint8_t crc_poly = 0xD5U; // CRC8 
+const uint8_t crc_poly = 0xD5U; // CRC8
 
 /**
   * @brief  The application entry point.
@@ -42,9 +47,9 @@ int main(void)
   int16_t CH1_DC = 0;
 
   TxHeader.IDE = CAN_ID_STD;
-  TxHeader.StdId = 0x446;
+  TxHeader.StdId = CAN_OUT;
   TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.DLC = 2;
+  TxHeader.DLC = 5;
 
   TxData[0] = 50;  
   TxData[1] = 0xAA;
