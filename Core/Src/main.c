@@ -52,32 +52,38 @@ int main(void)
   while (1)
   {
 
+    HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+
     if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
       {
-        Error_Handler ();
+        HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
+        // Error_Handler ();
       }
 
-	  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
-	  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-	  delay(500000);
+    HAL_Delay(100);
 
-    while(CH1_DC < 32700)
-    {
-        motor_set(CH1_DC, 1);
-        CH1_DC += 64;
-        HAL_Delay(1);
-    }
+	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
+	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+	  // delay(500000);
 
-	  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-	  HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-	  delay(500000);
+    // while(CH1_DC < 32700)
+    // {
+    //     motor_set(CH1_DC, 1);
+    //     CH1_DC += 64;
+    //     HAL_Delay(1);
+    // }
 
-    while(CH1_DC > -32700)
-    {
-        motor_set(CH1_DC, 1);
-        CH1_DC -= 70;
-        HAL_Delay(1);
-    }
+	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+	  // delay(500000);
+
+    // while(CH1_DC > -32700)
+    // {
+    //     motor_set(CH1_DC, 1);
+    //     CH1_DC -= 70;
+    //     HAL_Delay(1);
+    // }
   }
 }
 
@@ -132,7 +138,7 @@ static void MX_CAN1_Init(void)
   hcan1.Instance = CAN1;
   hcan1.Init.Prescaler = 8;
   hcan1.Init.Mode = CAN_MODE_NORMAL;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_2TQ;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
   hcan1.Init.TimeSeg1 = CAN_BS1_3TQ;
   hcan1.Init.TimeSeg2 = CAN_BS2_5TQ;
   hcan1.Init.TimeTriggeredMode = DISABLE;
