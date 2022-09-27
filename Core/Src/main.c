@@ -16,6 +16,66 @@ void delay(int a);
 void motor_set(int16_t amt, uint8_t enable);
 
 
+
+
+// from ocelot
+
+// OUTPUTS
+//---------------------------------
+#define LKA_INPUT 0x2E4
+uint16_t torque_req = 0;
+uint8_t lka_counter = 0;
+bool lka_req = 0;
+uint8_t lka_checksum = 0;
+
+#define CAN_ID 0x22F
+bool eps_ok = 0;
+
+// INPUTS
+//---------------------------------
+#define CAN_INPUT 0x22E
+uint8_t mode = 0;
+uint16_t rel_input = 0;
+uint16_t pos_input = 0;
+
+#define STEER_TORQUE_SENSOR 0x260
+uint16_t steer_torque_driver = 0;
+uint16_t steer_torque_eps = 0;
+bool steer_override = 0;
+
+#define EPS_STATUS 0x262
+uint8_t lka_state = 0;
+
+// COUNTERS
+uint8_t can1_count_out = 0;
+uint8_t can1_count_in;
+uint8_t can2_count_out = 0;
+
+#define MAX_TIMEOUT 50U
+uint32_t timeout = 0;
+
+#define NO_FAULT 0U
+#define FAULT_BAD_CHECKSUM 1U
+#define FAULT_SEND 2U
+#define FAULT_SCE 3U
+#define FAULT_STARTUP 4U
+#define FAULT_TIMEOUT 5U
+#define FAULT_INVALID 6U
+#define FAULT_COUNTER 7U
+
+uint8_t state = FAULT_STARTUP;
+
+//#define CAN_UPDATE  0x23F //bootloader
+#define COUNTER_CYCLE 0xFU
+#define LKA_COUNTER_CYCLE = 0x3FU
+
+bool sent;
+
+/// end
+
+
+
+
 // CAN
 #define CAN_IN 0x2e5
 #define CAN_OUT 0x260
