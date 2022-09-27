@@ -20,9 +20,31 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+/* USER CODE END Includes */
 
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN TD */
 
-const uint8_t crc_poly = 0xD5U; // CRC8
+/* USER CODE END TD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -34,7 +56,6 @@ const uint8_t crc_poly = 0xD5U; // CRC8
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
-
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -184,6 +205,15 @@ void CAN1_TX_IRQHandler(void)
 {
   // clear interrupt
   CAN1->TSR |= CAN_TSR_RQCP0;
+}
+
+/**
+  * @brief This function handles CAN1 RX0 interrupts.
+  */
+void CAN1_RX0_IRQHandler(void)
+{
+   // clear interrupt
+  CAN1->TSR |= CAN_TSR_RQCP0;
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
     uint16_t address = CAN1->sFIFOMailBox[0].RIR >> 21;
     switch (address) {
@@ -224,20 +254,7 @@ void CAN1_TX_IRQHandler(void)
     // next
     // CAN1->RF0R |= CAN_RF0R_RFOM0;
   }
-}
-
-
-
-
-
-/**
-  * @brief This function handles CAN1 RX0 interrupts.
-  */
-void CAN1_RX0_IRQHandler(void)
-{
-  /* USER CODE BEGIN CAN1_RX0_IRQn 0 */
-
-  /* USER CODE END CAN1_RX0_IRQn 0 */
+  
   HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
