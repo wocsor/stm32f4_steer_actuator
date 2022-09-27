@@ -46,6 +46,9 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
+  // start TIM3 interrupt
+  HAL_TIM_Base_Start_IT(&htim3);
+
   int16_t CH1_DC = 0;
 
   TxHeader.IDE = CAN_ID_STD;
@@ -275,7 +278,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 1000;
+  htim3.Init.Prescaler = 20;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 36000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
