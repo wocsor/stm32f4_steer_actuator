@@ -35,6 +35,13 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
+#define CAN1_EN_Pin GPIO_PIN_1
+#define CAN1_EN_GPIO_Port GPIOC
+#define CAN2_EN_Pin GPIO_PIN_2
+#define CAN2_EN_GPIO_Port GPIOC
+#define TBD_Pin GPIO_PIN_3
+#define TBD_GPIO_Port GPIOC
+
 #define CH1_EN_Pin GPIO_PIN_2
 #define CH1_EN_GPIO_Port GPIOA
 #define CH2_EN_Pin GPIO_PIN_3
