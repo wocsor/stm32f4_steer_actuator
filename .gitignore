@@ -1,4 +1,6 @@
 *.o
 *.elf
+*.d
+*.su 
 
 Debug/

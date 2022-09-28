@@ -29,16 +29,10 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 
-
-
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
-
-/* USER CODE BEGIN EFP */
-
-/* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
 #define CH1_EN_Pin GPIO_PIN_2
@@ -52,7 +46,20 @@ void Error_Handler(void);
 #define LED2_Pin GPIO_PIN_7
 #define LED2_GPIO_Port GPIOA
 /* USER CODE BEGIN Private defines */
-
+#define MAX_TIMEOUT 50U
+#define NO_FAULT 0U
+#define FAULT_BAD_CHECKSUM 1U
+#define FAULT_SEND 2U
+#define FAULT_SCE 3U
+#define FAULT_STARTUP 4U
+#define FAULT_TIMEOUT 5U
+#define FAULT_INVALID 6U
+#define FAULT_COUNTER 7U
+#define COUNTER_CYCLE 0xFU
+#define LKA_COUNTER_CYCLE = 0x3FU
+// CAN
+#define CAN_IN 0x2e5
+#define CAN_OUT 0x260
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

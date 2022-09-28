@@ -17,27 +17,39 @@
   */
 /* USER CODE END Header */
 
+// crc function from Panda 
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-
 
 const uint8_t crc_poly = 0xD5U; // CRC8
 /* USER CODE BEGIN PFP */
 static uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly);
 
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
 extern TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN EV */
-
+// variables
+uint16_t torque_req = 0;
+uint8_t lka_counter = 0;
+uint8_t lka_req = 0;
+uint8_t lka_checksum = 0;
+uint8_t eps_ok = 0;
+uint8_t mode = 0;
+uint16_t rel_input = 0;
+uint16_t pos_input = 0;
+uint16_t steer_torque_driver = 0;
+uint16_t steer_torque_eps = 0;
+uint8_t steer_override = 0;
+uint8_t can1_count_out = 0;
+uint8_t can1_count_in =  0;
+uint8_t can2_count_out = 0;
+uint32_t timeout = 0;
+uint8_t state = 0;
+uint8_t sent = 0;
+uint8_t lka_state = 0;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -192,8 +204,6 @@ void CAN1_TX_IRQHandler(void)
   /* USER CODE END CAN1_TX_IRQn 1 */
 }
 
-
-
 /**
   * @brief This function handles CAN1 RX0 interrupts.
   */
@@ -204,10 +214,10 @@ void CAN1_RX0_IRQHandler(void)
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
     uint16_t address = CAN1->sFIFOMailBox[0].RIR >> 21;
     switch (address) {
-      case CAN_INPUT: ;
-        uint8_t dat[6];
+      case CAN_IN: ;
+        uint8_t dat[6] = {0};
         for (int i=0; i<6; i++) {
-          dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
+          // dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
         }
         uint8_t index = dat[1] & COUNTER_CYCLE;
         if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
@@ -237,7 +247,6 @@ void CAN1_RX0_IRQHandler(void)
         break;
       default: ;
     }
-    can_rx(0);
     // next
     // CAN1->RF0R |= CAN_RF0R_RFOM0;
   }
@@ -286,5 +295,20 @@ void TIM3_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-
+uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly) {
+  uint8_t crc = 0xFF;
+  int i, j;
+  for (i = len - 1; i >= 0; i--) {
+    crc ^= dat[i];
+    for (j = 0; j < 8; j++) {
+      if ((crc & 0x80U) != 0U) {
+        crc = (uint8_t)((crc << 1) ^ poly);
+      }
+      else {
+        crc <<= 1;
+      }
+    }
+  }
+  return crc;
+}
 /* USER CODE END 1 */
