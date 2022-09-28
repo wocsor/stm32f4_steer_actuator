@@ -62,6 +62,10 @@ void Error_Handler(void);
 #define CAN_OUT 0x260
 /* USER CODE END Private defines */
 
+extern CAN_HandleTypeDef hcan1;
+extern CAN_TxHeaderTypeDef   TxHeader;
+extern uint32_t              TxMailbox;
+
 #ifdef __cplusplus
 }
 #endif

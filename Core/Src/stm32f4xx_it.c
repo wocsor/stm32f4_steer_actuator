@@ -279,19 +279,35 @@ void TIM3_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM3_IRQn 0 */
 
-  if (led_state == 0){
-    led_state = 1;
+  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, led_state);
+  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
+   	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
   } else {
-    led_state = 0;
+    HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
   }
 
-  HAL_GPIO_WritePin(GPIOA, LED1_Pin, led_state);
+  //send to EON
+  uint8_t dat[7];
 
-  /* USER CODE END TIM3_IRQn 0 */
+  dat[6] = (steer_torque_eps & 0xFF);
+  dat[5] = (steer_torque_eps >> 8U);
+  dat[4] = (steer_torque_driver & 0xFF);
+  dat[3] = (steer_torque_driver >> 8U);
+  dat[2] = eps_ok;
+  dat[1] = ((state & 0xFU) << 4) | can1_count_out;
+  dat[0] = crc_checksum(dat, 7, crc_poly);
+
+  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, dat, &TxMailbox) != HAL_OK) {
+    // do a thing
+  } else {
+    // do another thing
+  }
+
+  can1_count_out++;
+  can1_count_out &= COUNTER_CYCLE;
+
   HAL_TIM_IRQHandler(&htim3);
-  /* USER CODE BEGIN TIM3_IRQn 1 */
 
-  /* USER CODE END TIM3_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

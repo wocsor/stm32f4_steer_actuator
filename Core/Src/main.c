@@ -1,7 +1,5 @@
 #include "main.h"
 
-CAN_HandleTypeDef hcan1;
-
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
@@ -14,8 +12,8 @@ static void MX_TIM3_Init(void);
 void delay(int a);
 void motor_set(int16_t amt, uint8_t enable);
 
+CAN_HandleTypeDef hcan1;
 CAN_TxHeaderTypeDef   TxHeader;
-uint8_t               TxData[8];
 uint32_t              TxMailbox;
 
 /**
@@ -38,18 +36,12 @@ int main(void)
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
-  // start TIM3 interrupt
-  HAL_TIM_Base_Start_IT(&htim3);
-
   int16_t CH1_DC = 0;
 
   TxHeader.IDE = CAN_ID_STD;
   TxHeader.StdId = CAN_OUT;
   TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.DLC = 5;
-
-  TxData[0] = 50;  
-  TxData[1] = 0xAA;
+  TxHeader.DLC = 6;
 
   if (HAL_CAN_Start(&hcan1) != HAL_OK)
   {
@@ -59,49 +51,12 @@ int main(void)
   HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
 
+    // start TIM3 interrupt
+  HAL_TIM_Base_Start_IT(&htim3);
+  
   while (1)
   {
-      if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
-      	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-      } else {
-        HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-      }
-
-
-    //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-    //HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-
-    if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, TxData, &TxMailbox) != HAL_OK)
-      {
-        // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-        // Error_Handler ();
-      } else {
-          // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
-      }
-
-    HAL_Delay(100);
-
-	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
-	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-	  // delay(500000);
-
-    // while(CH1_DC < 32700)
-    // {
-    //     motor_set(CH1_DC, 1);
-    //     CH1_DC += 64;
-    //     HAL_Delay(1);
-    // }
-
-	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-	  // delay(500000);
-
-    // while(CH1_DC > -32700)
-    // {
-    //     motor_set(CH1_DC, 1);
-    //     CH1_DC -= 70;
-    //     HAL_Delay(1);
-    // }
+    // do something
   }
 }
 
