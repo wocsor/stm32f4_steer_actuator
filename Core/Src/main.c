@@ -22,6 +22,7 @@ uint32_t              TxMailbox;
 
 UART_HandleTypeDef huart1;
 
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -39,6 +40,7 @@ int main(void)
   MX_TIM3_Init();
   MX_CAN2_Init();
   MX_USART1_UART_Init();
+
 
   // PWM channels init
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
@@ -61,6 +63,9 @@ int main(void)
 
     // start TIM3 interrupt
   HAL_TIM_Base_Start_IT(&htim3);
+
+  HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin, GPIO_PIN_RESET);
+
   
   while (1)
   {
@@ -362,13 +367,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin|CAN2_EN_Pin|TBD_Pin, GPIO_PIN_RESET);
+
+  // Setting this to HIGH to prevent CAN transc from starting
+  HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin|CAN2_EN_Pin|TBD_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, CH1_EN_Pin|CH2_EN_Pin|RELAY_EN_Pin|LED1_Pin
                           |LED2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : CAN1_EN_Pin CAN2_EN_Pin TBD_Pin */
+  
   GPIO_InitStruct.Pin = CAN1_EN_Pin|CAN2_EN_Pin|TBD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
