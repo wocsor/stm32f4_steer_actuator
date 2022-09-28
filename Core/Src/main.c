@@ -81,6 +81,13 @@ int main(void)
 
     HAL_Delay(100);
 
+
+    // torque_req, lka_req global functions exposed in _it.c
+
+    if (lka_req > 0) { // Enabled
+      motor_set(torque_req, 1);
+    }
+
 	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
 	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
 	  // delay(500000);

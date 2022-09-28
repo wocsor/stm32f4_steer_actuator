@@ -32,9 +32,13 @@ extern CAN_HandleTypeDef hcan1;
 extern TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN EV */
 // variables
-uint16_t torque_req = 0;
+
+// Torque request to be referenced in main loop
+extern uint16_t torque_req = 0;
+// LKA enabled, used in mainloop
+extern uint8_t lka_req = 0;
+
 uint8_t lka_counter = 0;
-uint8_t lka_req = 0;
 uint8_t lka_checksum = 0;
 uint8_t eps_ok = 0;
 uint8_t mode = 0;
@@ -51,6 +55,8 @@ uint8_t state = 0;
 uint8_t sent = 0;
 uint8_t lka_state = 0;
 /* USER CODE END EV */
+
+ 
 
 /******************************************************************************/
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
@@ -233,6 +239,9 @@ void CAN1_RX0_IRQHandler(void)
             rel_input = ((dat[5] << 8U) | dat[4]);
             // TODO: safety? scaling?
             torque_req = rel_input;
+
+            
+
             can1_count_in++;
           }
           else {
