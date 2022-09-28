@@ -65,7 +65,7 @@ void Error_Handler(void);
 #define COUNTER_CYCLE 0xFU
 #define LKA_COUNTER_CYCLE = 0x3FU
 // CAN
-#define CAN_IN 0x2e5
+#define CAN_IN 0x22e
 #define CAN_OUT 0x260
 /* USER CODE END Private defines */
 
@@ -75,6 +75,8 @@ extern uint32_t              TxMailbox;
 
 extern uint16_t torque_req;
 extern uint8_t lka_req;
+
+extern uint8_t state;
 
 #ifdef __cplusplus
 }

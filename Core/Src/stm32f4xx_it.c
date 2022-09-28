@@ -214,35 +214,40 @@ void CAN1_TX_IRQHandler(void)
 /**
   * @brief This function handles CAN1 RX0 interrupts.
   */
+#define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0xFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
 void CAN1_RX0_IRQHandler(void)
 {
+  __disable_irq();
+  state = 0;
+  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
    // clear interrupt
   CAN1->TSR |= CAN_TSR_RQCP0;
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
     uint16_t address = CAN1->sFIFOMailBox[0].RIR >> 21;
     switch (address) {
+
       case CAN_IN: ;
-        uint8_t dat[6] = {0};
+        uint8_t dat[6];
         for (int i=0; i<6; i++) {
-          // dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
+          dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
         }
+
         uint8_t index = dat[1] & COUNTER_CYCLE;
         if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
           if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
             //if counter and checksum valid accept commands
             mode = ((dat[1] >> 4U) & 3U);
+
             if (mode != 0){
               lka_req = 1;
             } else {
               lka_req = 0;
             }
+            
             pos_input = ((dat[3] & 0xFU) << 8U) | dat[2];
             rel_input = ((dat[5] << 8U) | dat[4]);
             // TODO: safety? scaling?
             torque_req = rel_input;
-
-            
-
             can1_count_in++;
           }
           else {
@@ -265,6 +270,8 @@ void CAN1_RX0_IRQHandler(void)
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
+  __enable_irq();
+
 }
 
 /**
@@ -329,14 +336,15 @@ void TIM3_IRQHandler(void)
   /* USER CODE BEGIN TIM3_IRQn 0 */
 
   // HAL_GPIO_WritePin(GPIOA, LED1_Pin, led_state);
-  if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
-   	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-  } else {
-    HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-  }
+  // if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
+  //  	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+  // } else {
+  //   HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+  // }
 
   eps_ok = 1;
-  state = 5;
+
+  steer_torque_driver = rel_input;
   
   //send to EON
   uint8_t dat[7];

@@ -41,7 +41,6 @@ int main(void)
   MX_CAN2_Init();
   MX_USART1_UART_Init();
 
-
   // PWM channels init
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
@@ -66,51 +65,22 @@ int main(void)
 
   HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin, GPIO_PIN_RESET);
 
-  
+  state = FAULT_STARTUP;
+
   while (1)
   {
       if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
-      	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+      	// HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
       } else {
-        HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
       }
-
-
-    //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-    //HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
 
     // torque_req, lka_req global functions exposed in _it.c
 
     if (lka_req > 0) { // Enabled
-      // Light LED if lka request active
-      HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
       motor_set(torque_req, 1);
     } else {
-      // No LKA request
-      HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
     }
-
-	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
-	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-	  // delay(500000);
-
-    // while(CH1_DC < 32700)
-    // {
-    //     motor_set(CH1_DC, 1);
-    //     CH1_DC += 64;
-    //     HAL_Delay(1);
-    // }
-
-	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-	  // delay(500000);
-
-    // while(CH1_DC > -32700)
-    // {
-    //     motor_set(CH1_DC, 1);
-    //     CH1_DC -= 70;
-    //     HAL_Delay(1);
-    // }
   }
 }
 
@@ -190,13 +160,6 @@ static void MX_CAN1_Init(void)
 static void MX_CAN2_Init(void)
 {
 
-  /* USER CODE BEGIN CAN2_Init 0 */
-
-  /* USER CODE END CAN2_Init 0 */
-
-  /* USER CODE BEGIN CAN2_Init 1 */
-
-  /* USER CODE END CAN2_Init 1 */
   hcan2.Instance = CAN2;
   hcan2.Init.Prescaler = 8;
   hcan2.Init.Mode = CAN_MODE_NORMAL;
@@ -214,8 +177,6 @@ static void MX_CAN2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN CAN2_Init 2 */
-
-  /* USER CODE END CAN2_Init 2 */
 
 }
 
@@ -281,16 +242,9 @@ static void MX_TIM2_Init(void)
 static void MX_TIM3_Init(void)
 {
 
-  /* USER CODE BEGIN TIM3_Init 0 */
-
-  /* USER CODE END TIM3_Init 0 */
-
   TIM_ClockConfigTypeDef sClockSourceConfig = {0};
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
-  /* USER CODE BEGIN TIM3_Init 1 */
-
-  /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 20;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -312,9 +266,6 @@ static void MX_TIM3_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN TIM3_Init 2 */
-
-  /* USER CODE END TIM3_Init 2 */
 
 }
 
@@ -326,13 +277,6 @@ static void MX_TIM3_Init(void)
 static void MX_USART1_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
-
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
   huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
@@ -345,10 +289,6 @@ static void MX_USART1_UART_Init(void)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-
 }
 
 /**
@@ -360,31 +300,22 @@ static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-  /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-
-  // Setting this to HIGH to prevent CAN transc from starting
   HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin|CAN2_EN_Pin|TBD_Pin, GPIO_PIN_SET);
 
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, CH1_EN_Pin|CH2_EN_Pin|RELAY_EN_Pin|LED1_Pin
                           |LED2_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : CAN1_EN_Pin CAN2_EN_Pin TBD_Pin */
-  
   GPIO_InitStruct.Pin = CAN1_EN_Pin|CAN2_EN_Pin|TBD_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : CH1_EN_Pin CH2_EN_Pin RELAY_EN_Pin LED1_Pin
-                           LED2_Pin */
   GPIO_InitStruct.Pin = CH1_EN_Pin|CH2_EN_Pin|RELAY_EN_Pin|LED1_Pin
                           |LED2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -428,13 +359,10 @@ void motor_set (int16_t amt, uint8_t enable)
   */
 void Error_Handler(void)
 {
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
   while (1)
   {
   }
-  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
