@@ -3,6 +3,9 @@
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
+// logging
+UART_HandleTypeDef huart2;
+
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_CAN1_Init(void);
@@ -42,6 +45,7 @@ int main(void)
   MX_USART1_UART_Init();
 
 
+  
   // PWM channels init
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
@@ -52,6 +56,12 @@ int main(void)
   TxHeader.StdId = CAN_OUT;
   TxHeader.RTR = CAN_RTR_DATA;
   TxHeader.DLC = 7;
+
+
+  // logging 
+  uint8_t MSG[35] = {'\0'};
+  uint8_t X = 0;
+  
 
   if (HAL_CAN_Start(&hcan1) != HAL_OK)
   {
@@ -74,6 +84,13 @@ int main(void)
       } else {
         HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
       }
+
+      // logging
+      sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
+      HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+      HAL_Delay(500);
+      X++;
+      // end
 
 
     //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
