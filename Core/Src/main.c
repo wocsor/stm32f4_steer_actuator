@@ -77,7 +77,12 @@ int main(void)
     // torque_req, lka_req global functions exposed in _it.c
 
     if (lka_req > 0) { // Enabled
+      // Light LED if lka request active
+      HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
       motor_set(torque_req, 1);
+    } else {
+      // No LKA request
+      HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
     }
 
 	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
