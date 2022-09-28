@@ -32,9 +32,13 @@ extern CAN_HandleTypeDef hcan1;
 extern TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN EV */
 // variables
+
+// Torque request to be referenced in main loop
 uint16_t torque_req = 0;
-uint8_t lka_counter = 0;
+// LKA enabled, used in mainloop
 uint8_t lka_req = 0;
+
+uint8_t lka_counter = 0;
 uint8_t lka_checksum = 0;
 uint8_t eps_ok = 0;
 uint8_t mode = 0;
@@ -51,6 +55,8 @@ uint8_t state = 0;
 uint8_t sent = 0;
 uint8_t lka_state = 0;
 /* USER CODE END EV */
+
+ 
 
 /******************************************************************************/
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
@@ -233,6 +239,9 @@ void CAN1_RX0_IRQHandler(void)
             rel_input = ((dat[5] << 8U) | dat[4]);
             // TODO: safety? scaling?
             torque_req = rel_input;
+
+            
+
             can1_count_in++;
           }
           else {
@@ -286,6 +295,9 @@ void TIM3_IRQHandler(void)
     HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
   }
 
+  eps_ok = 1;
+  state = 5;
+  
   //send to EON
   uint8_t dat[7];
 
@@ -297,14 +309,19 @@ void TIM3_IRQHandler(void)
   dat[1] = ((state & 0xFU) << 4) | can1_count_out;
   dat[0] = crc_checksum(dat, 7, crc_poly);
 
-  if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, dat, &TxMailbox) != HAL_OK) {
-    // do a thing
-  } else {
-    // do another thing
-  }
-
   can1_count_out++;
   can1_count_out &= COUNTER_CYCLE;
+
+  HAL_CAN_AddTxMessage(&hcan1, &TxHeader, dat, &TxMailbox);
+
+  CAN1->TSR |= CAN_TSR_ABRQ0;
+  CAN1->MSR = CAN1->MSR;
+
+  // if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, dat, &TxMailbox) != HAL_OK) {
+  //   // do a thing
+  // } else {
+  //   // do another thing
+  // }
 
   HAL_TIM_IRQHandler(&htim3);
 

@@ -66,6 +66,9 @@ extern CAN_HandleTypeDef hcan1;
 extern CAN_TxHeaderTypeDef   TxHeader;
 extern uint32_t              TxMailbox;
 
+extern uint16_t torque_req;
+extern uint8_t lka_req;
+
 #ifdef __cplusplus
 }
 #endif

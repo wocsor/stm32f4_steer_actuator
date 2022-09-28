@@ -41,7 +41,7 @@ int main(void)
   TxHeader.IDE = CAN_ID_STD;
   TxHeader.StdId = CAN_OUT;
   TxHeader.RTR = CAN_RTR_DATA;
-  TxHeader.DLC = 6;
+  TxHeader.DLC = 7;
 
   if (HAL_CAN_Start(&hcan1) != HAL_OK)
   {
@@ -56,7 +56,43 @@ int main(void)
   
   while (1)
   {
-    // do something
+      if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
+      	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+      } else {
+        HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+      }
+
+
+    //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+    //HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+
+    // torque_req, lka_req global functions exposed in _it.c
+
+    if (lka_req > 0) { // Enabled
+      motor_set(torque_req, 1);
+    }
+
+	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
+	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+	  // delay(500000);
+
+    // while(CH1_DC < 32700)
+    // {
+    //     motor_set(CH1_DC, 1);
+    //     CH1_DC += 64;
+    //     HAL_Delay(1);
+    // }
+
+	  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+	  // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+	  // delay(500000);
+
+    // while(CH1_DC > -32700)
+    // {
+    //     motor_set(CH1_DC, 1);
+    //     CH1_DC -= 70;
+    //     HAL_Delay(1);
+    // }
   }
 }
 
