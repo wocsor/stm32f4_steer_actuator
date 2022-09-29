@@ -78,12 +78,10 @@ extern uint8_t lka_req;
 
 extern uint8_t state;
 
-extern uint8_t lut_checksum(uint8_t *d, int l, uint8_t *table);
-extern uint8_t crc8_lut_1d[256];
-
-extern const uint8_t crc_poly;
-
 extern UART_HandleTypeDef huart2;
+
+extern const uint8_t crc_poly;  // standard crc8 SAE J1850
+extern uint8_t crc8_lut_1d[256];
 
 #ifdef __cplusplus
 }

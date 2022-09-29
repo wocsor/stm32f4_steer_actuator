@@ -22,7 +22,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-
+#include "crc.h"
 /* USER CODE BEGIN PFP */
 
 /* External variables --------------------------------------------------------*/
@@ -55,7 +55,8 @@ uint8_t sent = 0;
 uint8_t lka_state = 0;
 /* USER CODE END EV */
 
- 
+uint8_t lut_checksum(uint8_t *d, int l, uint8_t *table);
+void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]);
 
 /******************************************************************************/
 /*           Cortex-M4 Processor Interruption and Exception Handlers          */
@@ -207,12 +208,16 @@ void CAN1_TX_IRQHandler(void) {
   * @brief This function handles CAN1 RX0 interrupts.
   */
 #define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0xFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
+// crc stuff
+const uint8_t crc_poly = 0x1D;  // standard crc8 SAE J1850
+uint8_t crc8_lut_1d[256];
+//end
 void CAN1_RX0_IRQHandler(void) {
 
    // clear interrupt
   CAN1->TSR |= CAN_TSR_RQCP0;
 
-  __disable_irq();
+  // __disable_irq();
 
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
 
@@ -220,10 +225,9 @@ void CAN1_RX0_IRQHandler(void) {
     for (int i=0; i<6; i++) {
       dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
     }
-
     uint8_t index = dat[1] & COUNTER_CYCLE;
 
-    if(dat[0] == lut_checksum(dat, 6, crc_poly)) {
+    if(dat[0] == lut_checksum(dat, 6, crc8_lut_1d)) {
       if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
         //if counter and checksum valid accept commands
         mode = ((dat[1] >> 4U) & 3U);
@@ -258,7 +262,7 @@ void CAN1_RX0_IRQHandler(void) {
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
-  __enable_irq();
+  // __enable_irq();
 
 }
 
@@ -321,16 +325,16 @@ uint8_t X = 0;
 uint8_t led_state = 0;
 void TIM3_IRQHandler(void) {
 
-  __disable_irq();
+  // __disable_irq();
 
-  // logging
-  sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
-  HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
-  X++;
-  X &= 0xFF;
-  // end
+  // // logging
+  // sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
+  // HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+  // X++;
+  // X &= 0xFF;
+  // // end
 
-  __enable_irq();
+  // __enable_irq();
 
   steer_torque_driver = rel_input;
   
@@ -343,7 +347,7 @@ void TIM3_IRQHandler(void) {
   dat[3] = (steer_torque_driver >> 8U);
   dat[2] = eps_ok;
   dat[1] = ((state & 0xFU) << 4) | can1_count_out;
-  dat[0] = lut_checksum(dat, 7, crc_poly);
+  dat[0] = lut_checksum(dat, 7, crc8_lut_1d);
 
   can1_count_out++;
   can1_count_out &= COUNTER_CYCLE;

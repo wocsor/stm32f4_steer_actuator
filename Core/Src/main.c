@@ -19,12 +19,6 @@ void motor_set(int16_t amt, uint8_t enable);
 void can1InteruptEnable(void);
 void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]);
 
-
-// crc stuff
-const uint8_t crc_poly = 0x1D;  // standard crc8 SAE J1850
-uint8_t crc8_lut_1d[256];
-//end
-
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
 
@@ -60,6 +54,8 @@ void can1InteruptEnable(void) {
 int main(void)
 {
 
+  __disable_irq();
+
   HAL_Init();
 
   SystemClock_Config();
@@ -71,7 +67,10 @@ int main(void)
   MX_CAN2_Init();
   MX_USART1_UART_Init();
 
-
+  // building lookup table for crc8
+  gen_crc_lookup_table(crc_poly, crc8_lut_1d);
+  
+  __enable_irq();
 
   /*##-1- Configure the UART peripheral ######################################*/
   /* Put the USART peripheral in the Asynchronous mode (UART Mode) */
@@ -96,12 +95,6 @@ int main(void)
     /* Initialization Error */
     Error_Handler(); 
   }
-
-
-
-
-  // building lookup table for crc8
-  gen_crc_lookup_table(crc_poly, crc8_lut_1d);
 
   state = FAULT_STARTUP;
 
@@ -461,34 +454,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-
-void gen_crc_lookup_table(uint8_t poly, uint8_t crc_lut[]) {
-
-  uint8_t j;
-  uint16_t i;
-
-   for (i = 0; i < 256; i++) {
-    uint8_t crc;
-    crc = i;
-    for (j = 0; j < 8; j++) {
-      if ((crc & 0x80) != 0)
-        crc = (uint8_t)((crc << 1) ^ poly);
-      else
-        crc <<= 1;
-    }
-    crc_lut[i] = crc;
-  }
-}
-
-uint8_t lut_checksum(uint8_t *d, int l, uint8_t *table) {
-  uint8_t crc = 0xFF; // Standard init value for CRC8
-  // CRC the payload, skipping over the first byte where the CRC lives.
-  for (int i = 1; i < l; i++) {
-    crc ^= d[i] & 0xFF;
-    crc = table[crc] ^ crc<<8;
-  }
-  crc = crc ^ 0xFF; //final xor
-  return crc;
-}
-
