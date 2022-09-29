@@ -76,7 +76,13 @@ int main(void)
 
   HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin, GPIO_PIN_RESET);
 
+  
+
+  // gang signs turn to prayer hands
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+
+  // i think this is already done in msp can?
+  HAL_NVIC_SetPriority(&hcan1, 0, 0);
 
   state = FAULT_STARTUP;
 
