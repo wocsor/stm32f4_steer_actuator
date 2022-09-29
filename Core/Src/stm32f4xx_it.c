@@ -200,73 +200,61 @@ void SysTick_Handler(void)
 /**
   * @brief This function handles CAN1 TX interrupts.
   */
-void CAN1_TX_IRQHandler(void)
-{
-  /* USER CODE BEGIN CAN1_TX_IRQn 0 */
-
-  /* USER CODE END CAN1_TX_IRQn 0 */
-  HAL_CAN_IRQHandler(&hcan1);
-  /* USER CODE BEGIN CAN1_TX_IRQn 1 */
-
-  /* USER CODE END CAN1_TX_IRQn 1 */
+void CAN1_TX_IRQHandler(void) {
+  // clear interrupt
+  CAN1->TSR |= CAN_TSR_RQCP0;
 }
 
 /**
   * @brief This function handles CAN1 RX0 interrupts.
   */
 #define GET_BYTE(msg, b) (((int)(b) > 3) ? (((msg)->RDHR >> (8U * ((unsigned int)(b) % 4U))) & 0xFFU) : (((msg)->RDLR >> (8U * (unsigned int)(b))) & 0xFFU))
-void CAN1_RX0_IRQHandler(void)
-{
-  __disable_irq();
-  state = 0;
-  HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+void CAN1_RX0_IRQHandler(void) {
+
    // clear interrupt
   CAN1->TSR |= CAN_TSR_RQCP0;
+
+  __disable_irq();
+
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
     uint16_t address = CAN1->sFIFOMailBox[0].RIR >> 21;
-    switch (address) {
+    uint8_t dat[6];
+    for (int i=0; i<6; i++) {
+      dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
+    }
+    uint8_t index = dat[1] & COUNTER_CYCLE;
 
-      case CAN_IN: ;
-        uint8_t dat[6];
-        for (int i=0; i<6; i++) {
-          dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
-        }
+    if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
+      if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
+        //if counter and checksum valid accept commands
+        mode = ((dat[1] >> 4U) & 3U);
 
-        uint8_t index = dat[1] & COUNTER_CYCLE;
-        if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
-          if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
-            //if counter and checksum valid accept commands
-            mode = ((dat[1] >> 4U) & 3U);
-
-            if (mode != 0){
-              lka_req = 1;
-            } else {
-              lka_req = 0;
-            }
-            
-            pos_input = ((dat[3] & 0xFU) << 8U) | dat[2];
-            rel_input = ((dat[5] << 8U) | dat[4]);
-            // TODO: safety? scaling?
-            torque_req = rel_input;
-            can1_count_in++;
-          }
-          else {
-            state = FAULT_COUNTER;
-          }
-          state = NO_FAULT;
-          timeout = 0;
+        if (mode != 0){
+          lka_req = 1;
+        } else {
+          lka_req = 0;
         }
-        else {
-          state = FAULT_BAD_CHECKSUM;
-        }
-        break;
-      default: ;
+        
+        pos_input = ((dat[3] & 0xFU) << 8U) | dat[2];
+        rel_input = ((dat[5] << 8U) | dat[4]);
+        // TODO: safety? scaling?
+        torque_req = rel_input;
+        can1_count_in++;
+      }
+      else {
+        state = FAULT_COUNTER;
+      }
+      state = NO_FAULT;
+      timeout = 0;
+    }
+    else {
+      state = FAULT_BAD_CHECKSUM;
     }
     // next
-    // CAN1->RF0R |= CAN_RF0R_RFOM0;
+    CAN1->RF0R |= CAN_RF0R_RFOM0;
   }
   
-  HAL_CAN_IRQHandler(&hcan1);
+  // HAL_CAN_IRQHandler(&hcan1);
   /* USER CODE BEGIN CAN1_RX0_IRQn 1 */
 
   /* USER CODE END CAN1_RX0_IRQn 1 */
@@ -277,15 +265,10 @@ void CAN1_RX0_IRQHandler(void)
 /**
   * @brief This function handles CAN1 SCE interrupt.
   */
-void CAN1_SCE_IRQHandler(void)
-{
-  /* USER CODE BEGIN CAN1_SCE_IRQn 0 */
-
-  /* USER CODE END CAN1_SCE_IRQn 0 */
-  HAL_CAN_IRQHandler(&hcan1);
-  /* USER CODE BEGIN CAN1_SCE_IRQn 1 */
-
-  /* USER CODE END CAN1_SCE_IRQn 1 */
+void CAN1_SCE_IRQHandler(void) {
+  CAN1->TSR |= CAN_TSR_ABRQ0;
+  CAN1->MSR |= CAN_MSR_ERRI;
+  CAN1->MSR = CAN1->MSR;
 }
 
 void CAN2_TX_IRQHandler(void)
@@ -331,18 +314,7 @@ void CAN2_SCE_IRQHandler(void)
   * @brief This function handles TIM3 global interrupt.
   */
 uint8_t led_state = 0;
-void TIM3_IRQHandler(void)
-{
-  /* USER CODE BEGIN TIM3_IRQn 0 */
-
-  // HAL_GPIO_WritePin(GPIOA, LED1_Pin, led_state);
-  // if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
-  //  	HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-  // } else {
-  //   HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-  // }
-
-  eps_ok = 1;
+void TIM3_IRQHandler(void) {
 
   steer_torque_driver = rel_input;
   
@@ -364,12 +336,6 @@ void TIM3_IRQHandler(void)
 
   CAN1->TSR |= CAN_TSR_ABRQ0;
   CAN1->MSR = CAN1->MSR;
-
-  // if (HAL_CAN_AddTxMessage(&hcan1, &TxHeader, dat, &TxMailbox) != HAL_OK) {
-  //   // do a thing
-  // } else {
-  //   // do another thing
-  // }
 
   HAL_TIM_IRQHandler(&htim3);
 

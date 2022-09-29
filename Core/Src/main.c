@@ -24,6 +24,8 @@ CAN_HandleTypeDef hcan2;
 CAN_TxHeaderTypeDef   TxHeader;
 uint32_t              TxMailbox;
 
+CAN_FilterTypeDef canfilterconfig;
+
 UART_HandleTypeDef huart1;
 
 
@@ -33,10 +35,10 @@ void can1InteruptEnable(void) {
         // Quick flash for activate notifaction failing
         HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-        HAL_Delay(250)
+        HAL_Delay(250);
         HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-        HAL_Delay(250)
+        HAL_Delay(250);
     }
   }
 }
@@ -60,31 +62,46 @@ int main(void)
   MX_CAN2_Init();
   MX_USART1_UART_Init();
 
-  // abdstracted to remove code, will blink each led once every 250ms
-  // if fails and blocks thread
-  can1InteruptEnable()
-  
+  state = FAULT_STARTUP;
+
   // PWM channels init
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
 
-  int16_t CH1_DC = 0;
+  // int16_t CH1_DC = 0;
 
   TxHeader.IDE = CAN_ID_STD;
   TxHeader.StdId = CAN_OUT;
   TxHeader.RTR = CAN_RTR_DATA;
   TxHeader.DLC = 7;
 
-
   // logging 
   uint8_t MSG[35] = {'\0'};
   uint8_t X = 0;
+
+  // CAN filter because fuck you
+  canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
+  canfilterconfig.FilterBank = 0;  // which filter bank to use from the assigned ones
+  canfilterconfig.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  canfilterconfig.FilterIdHigh = 0x22e<<5;
+  canfilterconfig.FilterIdLow = 0;
+  canfilterconfig.FilterMaskIdHigh = 0x22e<<5;
+  canfilterconfig.FilterMaskIdLow = 0x0000;
+  canfilterconfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  canfilterconfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  canfilterconfig.SlaveStartFilterBank = 20;  // how many filters to assign to the CAN1 (master can)
+
+  HAL_CAN_ConfigFilter(&hcan1, &canfilterconfig);
   
 
   if (HAL_CAN_Start(&hcan1) != HAL_OK)
   {
     Error_Handler();
   }
+
+  // abdstracted to remove code, will blink each led once every 250ms
+  // if fails and blocks thread
+  can1InteruptEnable();
 
   HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
@@ -96,20 +113,9 @@ int main(void)
   HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin, GPIO_PIN_RESET);
 
   // gang signs turn to prayer hands
-  
-
-  // i think this is already done in msp can? 
-  HAL_NVIC_SetPriority(&hcan1, 0, 0);
-
-  state = FAULT_STARTUP;
 
   while (1)
   {
-      if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan1) > 0) {
-      	// HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
-      } else {
-        // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
-      }
 
     // logging
     sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
@@ -117,9 +123,6 @@ int main(void)
     HAL_Delay(500);
     X++;
     // end
-
-    //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
-    //HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
 
     // torque_req, lka_req global functions exposed in _it.c
 
@@ -187,7 +190,7 @@ static void MX_CAN1_Init(void)
   hcan1.Init.TimeTriggeredMode = DISABLE;
   hcan1.Init.AutoBusOff = DISABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
-  hcan1.Init.AutoRetransmission = ENABLE;
+  hcan1.Init.AutoRetransmission = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
   hcan1.Init.TransmitFifoPriority = DISABLE;
 
@@ -215,7 +218,7 @@ static void MX_CAN2_Init(void)
   hcan2.Init.TimeTriggeredMode = DISABLE;
   hcan2.Init.AutoBusOff = DISABLE;
   hcan2.Init.AutoWakeUp = DISABLE;
-  hcan2.Init.AutoRetransmission = ENABLE;
+  hcan2.Init.AutoRetransmission = DISABLE;
   hcan2.Init.ReceiveFifoLocked = DISABLE;
   hcan2.Init.TransmitFifoPriority = DISABLE;
   if (HAL_CAN_Init(&hcan2) != HAL_OK)
