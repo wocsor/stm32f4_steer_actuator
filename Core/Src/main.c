@@ -16,6 +16,7 @@ static void MX_USART1_UART_Init(void);
 
 void delay(int a);
 void motor_set(int16_t amt, uint8_t enable);
+void can1InteruptEnable(void);
 
 CAN_HandleTypeDef hcan1;
 CAN_HandleTypeDef hcan2;
@@ -24,6 +25,21 @@ CAN_TxHeaderTypeDef   TxHeader;
 uint32_t              TxMailbox;
 
 UART_HandleTypeDef huart1;
+
+
+void can1InteruptEnable(void) {
+  if (HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING) != HAL_OK) {
+    while (1) {
+        // Quick flash for activate notifaction failing
+        HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
+        HAL_Delay(250)
+        HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
+        HAL_Delay(250)
+    }
+  }
+}
 
 
 /**
@@ -44,7 +60,9 @@ int main(void)
   MX_CAN2_Init();
   MX_USART1_UART_Init();
 
-
+  // abdstracted to remove code, will blink each led once every 250ms
+  // if fails and blocks thread
+  can1InteruptEnable()
   
   // PWM channels init
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
@@ -74,14 +92,13 @@ int main(void)
     // start TIM3 interrupt
   HAL_TIM_Base_Start_IT(&htim3);
 
+  // Dropping can enabled to low to enable controller.
   HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin, GPIO_PIN_RESET);
 
+  // gang signs turn to prayer hands
   
 
-  // gang signs turn to prayer hands
-  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
-
-  // i think this is already done in msp can?
+  // i think this is already done in msp can? 
   HAL_NVIC_SetPriority(&hcan1, 0, 0);
 
   state = FAULT_STARTUP;
@@ -94,13 +111,12 @@ int main(void)
         // HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_RESET);
       }
 
-      // logging
-      sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
-      HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
-      HAL_Delay(500);
-      X++;
-      // end
-
+    // logging
+    sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
+    HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+    HAL_Delay(500);
+    X++;
+    // end
 
     //HAL_GPIO_WritePin(GPIOA, LED1_Pin, GPIO_PIN_SET);
     //HAL_GPIO_WritePin(GPIOA, LED2_Pin, GPIO_PIN_SET);
