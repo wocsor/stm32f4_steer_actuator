@@ -78,6 +78,11 @@ extern uint8_t lka_req;
 
 extern uint8_t state;
 
+extern uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly)
+extern uint8_t lut_checksum(uint8_t *d, int l, uint8_t *table)
+extern uint8_t crc8_lut_1d[256];
+
+
 #ifdef __cplusplus
 }
 #endif
