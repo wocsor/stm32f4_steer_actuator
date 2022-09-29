@@ -76,6 +76,8 @@ int main(void)
 
   HAL_GPIO_WritePin(GPIOC, CAN1_EN_Pin, GPIO_PIN_RESET);
 
+  HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
+
   state = FAULT_STARTUP;
 
   while (1)
