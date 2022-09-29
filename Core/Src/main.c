@@ -33,6 +33,8 @@ uint32_t              TxMailbox;
 
 CAN_FilterTypeDef canfilterconfig;
 
+UART_HandleTypeDef UartHandle;
+
 UART_HandleTypeDef huart1;
 
 
@@ -68,6 +70,35 @@ int main(void)
   MX_TIM3_Init();
   MX_CAN2_Init();
   MX_USART1_UART_Init();
+
+
+
+  /*##-1- Configure the UART peripheral ######################################*/
+  /* Put the USART peripheral in the Asynchronous mode (UART Mode) */
+  /* UART1 configured as follow:
+      - Word Length = 8 Bits
+      - Stop Bit = One Stop bit
+      - Parity = ODD parity
+      - BaudRate = 9600 baud
+      - Hardware flow control disabled (RTS and CTS signals) */
+  UartHandle.Instance          = USART1;
+  
+  UartHandle.Init.BaudRate     = 9600;
+  UartHandle.Init.WordLength   = UART_WORDLENGTH_8B;
+  UartHandle.Init.StopBits     = UART_STOPBITS_1;
+  UartHandle.Init.Parity       = UART_PARITY_ODD;
+  UartHandle.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+  UartHandle.Init.Mode         = UART_MODE_TX_RX;
+  UartHandle.Init.OverSampling = UART_OVERSAMPLING_16;
+    
+  if(HAL_UART_Init(&UartHandle) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }
+
+
+
 
   // building lookup table for crc8
   gen_crc_lookup_table(crc_poly, crc8_lut_1d);
@@ -120,8 +151,11 @@ int main(void)
 
   // gang signs turn to prayer hands
 
+  printf("\n\r im alive\n\r");
+
   while (1)
   {
+    printf("\n\r main loop\n\r");
     // torque_req, lka_req global functions exposed in _it.c
     if (lka_req > 0) { // Enabled
       motor_set(torque_req, 1);
