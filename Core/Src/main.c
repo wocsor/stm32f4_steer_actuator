@@ -85,10 +85,6 @@ int main(void)
   TxHeader.RTR = CAN_RTR_DATA;
   TxHeader.DLC = 7;
 
-  // logging 
-  uint8_t MSG[35] = {'\0'};
-  uint8_t X = 0;
-
   // CAN filter because fuck you
   canfilterconfig.FilterActivation = CAN_FILTER_ENABLE;
   canfilterconfig.FilterBank = 0;  // which filter bank to use from the assigned ones
@@ -126,16 +122,7 @@ int main(void)
 
   while (1)
   {
-
-    // logging
-    sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
-    HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
-    HAL_Delay(500);
-    X++;
-    // end
-
     // torque_req, lka_req global functions exposed in _it.c
-
     if (lka_req > 0) { // Enabled
       motor_set(torque_req, 1);
     } else {

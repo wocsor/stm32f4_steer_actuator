@@ -215,7 +215,7 @@ void CAN1_RX0_IRQHandler(void) {
   __disable_irq();
 
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
-    
+
     uint8_t dat[6];
     for (int i=0; i<6; i++) {
       dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
@@ -313,8 +313,24 @@ void CAN2_SCE_IRQHandler(void)
 /**
   * @brief This function handles TIM3 global interrupt.
   */
+
+// logging 
+uint8_t MSG[35] = {'\0'};
+uint8_t X = 0;
+
 uint8_t led_state = 0;
 void TIM3_IRQHandler(void) {
+
+  __disable_irq();
+
+  // logging
+  sprintf(MSG, "X gave it ya = %d times\r\n go baby go\r\n", X);
+  HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+  X++;
+  X &= 0xFF;
+  // end
+
+  __enable_irq();
 
   steer_torque_driver = rel_input;
   

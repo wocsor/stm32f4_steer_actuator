@@ -83,6 +83,7 @@ extern uint8_t crc8_lut_1d[256];
 
 extern const uint8_t crc_poly;
 
+extern UART_HandleTypeDef huart2;
 
 #ifdef __cplusplus
 }
