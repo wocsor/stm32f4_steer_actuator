@@ -23,9 +23,7 @@
 #include "main.h"
 #include "stm32f4xx_it.h"
 
-const uint8_t crc_poly = 0xD5U; // CRC8
 /* USER CODE BEGIN PFP */
-static uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly);
 
 /* External variables --------------------------------------------------------*/
 extern CAN_HandleTypeDef hcan1;
@@ -217,14 +215,15 @@ void CAN1_RX0_IRQHandler(void) {
   __disable_irq();
 
   while ((CAN1->RF0R & CAN_RF0R_FMP0) != 0) {
-    uint16_t address = CAN1->sFIFOMailBox[0].RIR >> 21;
+    
     uint8_t dat[6];
     for (int i=0; i<6; i++) {
       dat[i] = GET_BYTE(&CAN1->sFIFOMailBox[0], i);
     }
+
     uint8_t index = dat[1] & COUNTER_CYCLE;
 
-    if(dat[0] == crc_checksum(dat, 6, crc_poly)) {
+    if(dat[0] == lut_checksum(dat, 6, crc_poly)) {
       if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
         //if counter and checksum valid accept commands
         mode = ((dat[1] >> 4U) & 3U);
@@ -241,13 +240,14 @@ void CAN1_RX0_IRQHandler(void) {
         torque_req = rel_input;
         can1_count_in++;
       }
+
       else {
         state = FAULT_COUNTER;
       }
+
       state = NO_FAULT;
       timeout = 0;
-    }
-    else {
+    } else {
       state = FAULT_BAD_CHECKSUM;
     }
     // next
@@ -327,7 +327,7 @@ void TIM3_IRQHandler(void) {
   dat[3] = (steer_torque_driver >> 8U);
   dat[2] = eps_ok;
   dat[1] = ((state & 0xFU) << 4) | can1_count_out;
-  dat[0] = crc_checksum(dat, 7, crc_poly);
+  dat[0] = lut_checksum(dat, 7, crc_poly);
 
   can1_count_out++;
   can1_count_out &= COUNTER_CYCLE;
@@ -340,22 +340,3 @@ void TIM3_IRQHandler(void) {
   HAL_TIM_IRQHandler(&htim3);
 
 }
-
-/* USER CODE BEGIN 1 */
-uint8_t crc_checksum(uint8_t *dat, int len, const uint8_t poly) {
-  uint8_t crc = 0xFF;
-  int i, j;
-  for (i = len - 1; i >= 0; i--) {
-    crc ^= dat[i];
-    for (j = 0; j < 8; j++) {
-      if ((crc & 0x80U) != 0U) {
-        crc = (uint8_t)((crc << 1) ^ poly);
-      }
-      else {
-        crc <<= 1;
-      }
-    }
-  }
-  return crc;
-}
-/* USER CODE END 1 */
