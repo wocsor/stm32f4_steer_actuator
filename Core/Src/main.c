@@ -151,6 +151,7 @@ int main(void)
     if (lka_req > 0) { // Enabled
       motor_set(torque_req, 1);
     } else {
+      motor_set(0, 0);
     }
   }
 }
@@ -412,18 +413,17 @@ void motor_set (int16_t amt, uint8_t enable)
 
   uint32_t duty = 32767;
 
-  TIM2->CCR1 = duty + amt;
-  TIM2->CCR2 = duty - amt; 
-
   // set the GPIO lines
-  if (enable > 0 || noCanTimer < 50){
-    enable = 1;
+  if (enable){
+    TIM2->CCR1 = duty + amt*8;
+    TIM2->CCR2 = duty - amt*8; 
+  } else {
+    TIM2->CCR1 = 0;
+    TIM2->CCR2 = 0; 
   }
-
 
   // motor relay
   HAL_GPIO_WritePin(GPIOA, RELAY_EN_Pin, enable);
-  
   HAL_GPIO_WritePin(GPIOA, CH1_EN_Pin, enable);
   HAL_GPIO_WritePin(GPIOA, CH2_EN_Pin, enable);
 

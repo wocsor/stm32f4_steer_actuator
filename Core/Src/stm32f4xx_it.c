@@ -34,6 +34,8 @@ extern TIM_HandleTypeDef htim3;
 /* USER CODE BEGIN EV */
 // variables
 
+#define CAN_TIMEOUT 50U
+
 // Torque request to be referenced in main loop
 uint16_t torque_req = 0;
 // LKA enabled, used in mainloop
@@ -55,6 +57,7 @@ uint32_t timeout = 0;
 uint8_t state = 0;
 uint8_t sent = 0;
 uint8_t lka_state = 0;
+
 /* USER CODE END EV */
 
 uint8_t lut_checksum(uint8_t *d, int l, uint8_t *table);
@@ -231,6 +234,7 @@ void CAN1_RX0_IRQHandler(void) {
 
     if(dat[0] == lut_checksum(dat, 6, crc8_lut_1d)) {
       if (((can1_count_in + 1U) & COUNTER_CYCLE) == index) {
+
         //if counter and checksum valid accept commands
         mode = ((dat[1] >> 4U) & 3U);
 
@@ -255,12 +259,6 @@ void CAN1_RX0_IRQHandler(void) {
       timeout = 0;
     } else {
       state = FAULT_BAD_CHECKSUM;
-    }
-
-    // Incriment timer, if >50 cut out
-
-    if (noCanTimer > 49) {
-      noCanTimer ++;
     }
 
     // next
@@ -365,6 +363,13 @@ void TIM3_IRQHandler(void) {
 
   CAN1->TSR |= CAN_TSR_ABRQ0;
   CAN1->MSR = CAN1->MSR;
+
+  if (timeout > CAN_TIMEOUT){ 
+    motor_set(0, 0);
+    state = FAULT_TIMEOUT;
+  } else {
+    timeout++;
+  }
 
   HAL_TIM_IRQHandler(&htim3);
 
