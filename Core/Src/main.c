@@ -144,11 +144,9 @@ int main(void)
 
   // gang signs turn to prayer hands
 
-  printf("\n\r im alive\n\r");
 
   while (1)
   {
-    printf("\n\r main loop\n\r");
     // torque_req, lka_req global functions exposed in _it.c
     if (lka_req > 0) { // Enabled
       motor_set(torque_req, 1);
@@ -418,9 +416,14 @@ void motor_set (int16_t amt, uint8_t enable)
   TIM2->CCR2 = duty - amt; 
 
   // set the GPIO lines
-  if (enable > 0){
+  if (enable > 0 || noCanTimer < 50){
     enable = 1;
   }
+
+
+  // motor relay
+  HAL_GPIO_WritePin(GPIOA, RELAY_EN_Pin, enable);
+  
   HAL_GPIO_WritePin(GPIOA, CH1_EN_Pin, enable);
   HAL_GPIO_WritePin(GPIOA, CH2_EN_Pin, enable);
 

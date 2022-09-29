@@ -83,6 +83,8 @@ extern UART_HandleTypeDef huart2;
 extern const uint8_t crc_poly;  // standard crc8 SAE J1850
 extern uint8_t crc8_lut_1d[256];
 
+uint8_t noCanTimer;
+
 #ifdef __cplusplus
 }
 #endif

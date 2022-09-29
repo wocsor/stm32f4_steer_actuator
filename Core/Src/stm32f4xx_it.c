@@ -29,6 +29,8 @@
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan2;
 extern TIM_HandleTypeDef htim3;
+
+ 
 /* USER CODE BEGIN EV */
 // variables
 
@@ -254,6 +256,13 @@ void CAN1_RX0_IRQHandler(void) {
     } else {
       state = FAULT_BAD_CHECKSUM;
     }
+
+    // Incriment timer, if >50 cut out
+
+    if (noCanTimer > 49) {
+      noCanTimer ++;
+    }
+
     // next
     CAN1->RF0R |= CAN_RF0R_RFOM0;
   }
