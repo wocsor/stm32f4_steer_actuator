@@ -149,7 +149,13 @@ int main(void)
   {
     // torque_req, lka_req global functions exposed in _it.c
     if (lka_req > 0) { // Enabled
-      motor_set(torque_req, 1);
+
+      if (abs(torque_req) > 1500){
+        state = FAULT_INVALID;
+        motor_set(0,0);
+      } else {
+        motor_set(torque_req*8, lka_req);
+      }
     } else {
       motor_set(0, 0);
     }
@@ -415,8 +421,8 @@ void motor_set (int16_t amt, uint8_t enable)
 
   // set the GPIO lines
   if (enable){
-    TIM2->CCR1 = duty + amt*8;
-    TIM2->CCR2 = duty - amt*8; 
+    TIM2->CCR1 = duty + amt;
+    TIM2->CCR2 = duty - amt; 
   } else {
     TIM2->CCR1 = 0;
     TIM2->CCR2 = 0; 

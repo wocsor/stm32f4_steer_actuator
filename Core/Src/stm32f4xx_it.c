@@ -37,7 +37,7 @@ extern TIM_HandleTypeDef htim3;
 #define CAN_TIMEOUT 50U
 
 // Torque request to be referenced in main loop
-uint16_t torque_req = 0;
+int16_t torque_req = 0;
 // LKA enabled, used in mainloop
 uint8_t lka_req = 0;
 
@@ -243,11 +243,10 @@ void CAN1_RX0_IRQHandler(void) {
         } else {
           lka_req = 0;
         }
-        
-        pos_input = ((dat[3] & 0xFU) << 8U) | dat[2];
-        rel_input = ((dat[5] << 8U) | dat[4]);
+
         // TODO: safety? scaling?
-        torque_req = rel_input;
+        pos_input = ((dat[3] & 0xFU) << 8U) | dat[2];
+        torque_req = ((dat[5] << 8U) | dat[4]);
         can1_count_in++;
       }
 
@@ -365,7 +364,6 @@ void TIM3_IRQHandler(void) {
   CAN1->MSR = CAN1->MSR;
 
   if (timeout > CAN_TIMEOUT){ 
-    motor_set(0, 0);
     state = FAULT_TIMEOUT;
   } else {
     timeout++;
